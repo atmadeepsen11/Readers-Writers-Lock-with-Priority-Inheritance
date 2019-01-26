@@ -1,0 +1,185 @@
+#include <conf.h>
+#include <kernel.h>
+#include <proc.h>
+#include <q.h>
+#include <stdio.h>
+#include <lock.h>
+
+extern int permission;
+extern unsigned long ctr1000;
+
+void set_lstate(int ldesc){
+        struct pentry *pptr;
+        struct lentry *lptr;
+        lptr=&locktab[ldesc];
+        int tail=q[lptr->lqhead].qprev;
+        int head=lptr->lqhead;
+        int highest_prio=0;
+        if(tail==head){
+                lptr->ltype=NOT_TAKEN_LOCK;
+
+        }else{	
+		if(proctab[tail].locktype[ldesc]==WAIT_R){
+                highest_prio=checkforprio(ldesc);
+                	if(permission==1){
+				struct pentry *proc=&proctab[highest_prio];
+			}
+                    	locktab[ldesc].ltype=TAKEN_LOCK_R;
+                    	int index=q[lptr->lqtail].qprev;
+//                    	while(proctab[index]!=proctab[highest_prio] && (index!=lptr->lqhead)){
+                    	while(index!=highest_prio){
+		                lptr->nreaders=lptr->nreaders+1;
+				proctab[index].locktype[ldesc]=ASSIGNED_R;
+				index=q[index].qprev;
+  	                }
+			index=q[highest_prio].qprev;
+//			while(index!=lptr->lqhead){
+			while(index!=lptr->lqhead){			
+				if((proctab[index].locktype[ldesc]==WAIT_R) && (ctr1000-proctab[index].wait_time<500) && (proctab[index].lprio==proctab[highest_prio].lprio)){							lptr->nreaders=lptr->nreaders+1;
+	  	      		proctab[index].locktype[ldesc]=ASSIGNED_R;
+				}
+				index=q[index].qprev;
+			}
+                }else if(proctab[tail].locktype[ldesc]==WAIT_W){
+                        locktab[ldesc].ltype=TAKEN_LOCK_W;
+			proctab[highest_prio].locktype[ldesc]=ASSIGNED_W;
+                }
+        }
+}
+
+int releaseall(int numlocks, int ldesc, ... ){
+	STATWORD ps;
+	struct lentry *lptr;
+	struct pentry *pptr;
+	int i=0;
+	int nldesc;
+	int flagforSignal;
+	int return_val=0;
+	int highest_prio;
+	int index=0;
+	disable(ps);
+	
+	for(i=0; i<numlocks; i++){
+		int nldesc=*(&ldesc)+1;
+		pptr=&proctab[currpid];
+		lptr=&locktab[ldesc];
+		if(pptr->locktype[ldesc]<=0)
+			return_val=SYSERR;
+		if(pptr->locktype[ldesc]==ASSIGNED_R){
+			lptr->nreaders-=1;
+			if(lptr->nreaders!=0)
+				flagforSignal=0;	
+			else
+				set_lstate(ldesc);
+		}else if(pptr->locktype[ldesc]==ASSIGNED_W)
+			set_lstate(ldesc);
+		pptr->wait_time=0;
+		struct pentry *proc;
+		if(lptr->lstate==LUSED){
+			if(flagforSignal){
+				highest_prio=checkforprio(ldesc);
+				if(permission==0){
+					proc=&proctab[highest_prio];
+				}
+				index=q[lptr->lqtail].qprev;
+				if (proctab[index] == highest_prio && proctab[highest_prio] != &proctab[lptr->lqhead]){
+				
+					dequeue(index);
+					ready(index, RESCHNO);
+				}
+				else{ 
+					if (index != lptr->lqhead ){
+						while ( index != highest_prio){
+							dequeue(index);
+							ready(index, RESCHNO);
+							index =  q[index].qprev;
+						}
+					}
+				}
+			}
+		}
+	}
+	restore(ps);
+	return return_val;
+}
+					
+		
+		
+int checkforprio(int ldesc) {
+        struct lentry *lptr;
+        struct pentry *pptr;
+        lptr = &locktab[ldesc];
+        int index = q[lptr->lqtail].qprev;
+        while (index != lptr->lqhead) {
+                pptr = &proctab[index];
+                if (proctab[index].locktype[ldesc] == WAIT_W) {
+                        permission=1;
+                        return index;
+                }
+                index = q[index].qprev;
+        }
+        return -1;
+}
+
+
+
+
+
+
+
+
+
+
+/*
+int checkforprio(int ldesc) {
+        struct lentry *lptr;
+        struct pentry *pptr;
+        lptr = &locktab[ldesc];
+        int index = q[lptr->lqtail].qprev;
+        while (index != index) {
+                pptr = &proctab[index];
+                if (proctab[index].locktype[ldesc] == WRITE) {
+                        permission=1;
+                        return index;
+                }
+                index = q[index].qprev;
+        }
+        return -1;
+}
+
+
+void set_lstate(int ldesc){
+	struct pentry *pptr;
+	struct lentry *lptr;
+	lptr=&locktab[ldesc];
+	int tail=q[locktab[lqtail]].qprev;
+	int head=q[locktab[lqhead]];
+	int highest_prio=0;
+	if(tail==head){
+		lptr->type=NOT_TAKEN_LOCK;
+		
+	else{
+		if(proctab[currpid].locktype[ldesc]==TAKEN_LOCK_W)
+			if(proctab[tail].locktype[ldesc]==WAIT_R){
+				lptr->nreaders-=1;
+				highest_prio=checkforprio(ldesc);
+				if(permission==1 && lptr->nreaders==0){
+					locktab[ldesc].ltype=TAKEN_LOCK_W;
+					proctab[highest_prio].locktype[ldesc]=ASSIGNED_W;
+				}
+				else{
+				
+					locktab[ldesc].ltype=TAKEN_LOCK_R;
+                        	        int index=q[lptr->lqtail].qprev;
+					while(index!=lptr->lqhead){
+						 proctab[highest_prio].locktype[ldesc]=ASSIGNED_R;
+				}
+				}else if(proctab[tail].locktype[ldesc]==WAIT_W){
+					locktab[ldesc].ltype=TAKEN_LOCK_W;
+                        		proctab[highest_prio].locktype[ldesc]=ASSIGNED_W;
+				}		
+			}
+		}
+	 
+	
+*/

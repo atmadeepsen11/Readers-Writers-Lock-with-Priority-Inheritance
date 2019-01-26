@@ -1,0 +1,36 @@
+Q1. 
+1.
+Priority ceiling is a technique that can be used to overcome the issue of priority inheritance. When a low priority process is holding the lock even though a higher priority process is in the lock waiting queue, the shared mutex process running in the operating system has a characteristic (high) priority of its own, which is given to the low priority process holding the lock. This way, the process is completed, and the lock will be released for the higher process to run avoid a huge waiting time for the higher priority process.
+Drawback: The technique will work as long as the ceiling priority is the highest one.
+Another simple solution can be transferring the logic of previous PA, where max goodness will hold the lock and there is no preemption.
+
+2.
+--------------SEMAPHORE TEST----------------------
+-start writer, then sleep 1s. sem granted to write (prio 20)
+  writer Sem: to acquire sem
+  writer Sem: acquired sem, sleep 10s
+-start reader 1, then sleep 1s. reader 1(prio 25) gets blocked
+  reader 1 Sem: to acquire sem
+priority of writer:20
+-start reader 2, then sleep 1s. reader 2(prio 30) gets blocked
+  reader 2 Sem: to acquire sem
+priority of writer:20
+-kill reader 2, then sleep 1s
+priority of writer:20
+-kill reader 1, then sleep 1s
+priority of writer:20
+  writer Sem: to release sem
+
+
+
+
+Q2.
+The potential problem that can arise is when two readers are able to update the buffer at the same time.
+For example:
+Process p1 enters and acquires the reader lock assuming there was no writer process. The process is executed through try_update till buffer_add. 
+Another process p2 comes whilst buffer length will have been updated by p1. And now as multiple readers can grab the lock, p2 will execute the code to overwrite the data in buffer updated by p1.
+This is the reason of using write locks where only one process at a time should be allowed to execute critical sections of a code where any variable is updated/edited.  
+Thus, we see that synchronization is extremely difficult in an Operating System.
+ 
+
+

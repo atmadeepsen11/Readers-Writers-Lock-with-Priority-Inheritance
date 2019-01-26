@@ -1,0 +1,206 @@
+#include <conf.h>
+#include <q.h>
+#include <kernel.h>
+#include <stdio.h>
+#include <proc.h>
+#include <lock.h>
+
+
+int lock (int ldesc, int type, int priority) {
+        
+        struct lockentry *lptr;
+        struct pentry *pptr;
+        pptr = &proctab[currpid];
+        lptr = &locktab[ldesc];
+        int lid=getlid(ldesc);
+
+       nt getlid(int i) {
+        int lid;
+        if (i > 0) {
+ 
+               lptr = &locktab[i];
+                while(i<NLOCKS){
+                        if(lptr->ldesc==i){
+                                lid=i;
+                        }
+                i++;
+                }
+        return lid;
+        }
+i 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+int lock (int ldesc, int type, int priority) {
+	STATWORD ps;
+	struct lockentry *lptr;
+	struct pentry *pptr;
+	pptr = &proctab[currpid];
+	lptr = &locktab[ldesc];
+	int lid=getlid(ldesc);
+	disable(ps);
+
+	int checkpriority(int ldesc, int priority){
+		lptr=&locktab[ldesc];
+		int index=lptr->lqhead;
+		int  permission = 0;
+		while(q[index].qnext!=lptr->lqtail){
+			if((proctab[q[index].qnext].waitpprio>priority) && (proctab[q[index].qnext.locktype[ldesc]]==WRITE )){
+				permission = 1;
+			}
+		index = q[index].qnext;
+		}
+	return permission;
+	}
+
+	int getlid(int i) {
+	int lid;
+	if (i > 0) {
+		lptr = &locktab[i];
+		while(i<NLOCKS){
+			if(lptr->ldesc==i){
+				lid=i;
+			}
+		i++;
+		}
+	return lid;
+	}
+	return SYSERR;
+	}
+			}
+	if (isbadlock(lid) || type == DELETED) {
+		restore(ps);
+		return SYSERR;
+	}
+	
+	if(locktab[ldesc].lstate==LFREE){
+		pptr->locktype[lid] = type;
+		pptr->waitpprio = priority;
+		lptr->lstate=LUSED;
+		lptr->ltype=type;
+		pptr->lid=-1;
+		lptr->prochold[currpid]=1;
+		lptr->lprio=pptr->pprio;
+		restore(ps);
+		return OK;
+	}else if(lptr->lstate!=LFREE){
+		if(lptr->ltype==WRITE){
+			pptr->pstate=PRWAIT;
+			pptr->locktype[lid]=type;
+			pptr->waitpprio=priority;
+			pptr->lid=ldesc;
+			pptr->wait_time=ctr1000;
+			increase_prio(lid, pptr->pprio);
+			insert(currpid, lptr->lqhead, priority);
+			resched();
+			restore(ps);
+			return OK;
+		}else if(lptr->ltype==READ){
+			if(type==READ){
+				int trigger = checkpriority(int ldesc, int priority);
+				if(trigger!=1){
+					pptr->waitpprio=priority;
+					lptr->ltype->type;
+					lptr->prochold[currpid]=1;
+					pptr->locktype[lid]=type;
+					if(pptr->pprio>lptr->lprio){
+						lptr->lprio=pptr->pprio;
+					}				
+				restore(ps);
+				return OK;
+				} else if (trigger==1){
+					pptr->locktype[lid]=type;
+					pptr->pstate=PRWAIT;
+					pptr->lid=ldesc;
+					pptr->waitpprio=priority;
+					pptr->wait_time=ctr1000;
+					increase_prio(lid,pptr->pprio);
+					insert(currpid, lptr->lqhead, priority);
+					resched();
+					restore(ps);
+					return (OK);
+				}
+			}else if(type==WRITE){
+				pptr->locktype[lid] = type;
+				pptr->pstate = PRWAIT;
+				pptr->lid = ldesc;
+				pptr->waitpprio = priority;
+				pptr->wait_time = ctr1000;
+				priorityRampUp(ldesc, pptr->pprio);
+				insert(currpid, lptr->lqhead, priority);
+				resched();
+				restore(ps);
+				return (OK);
+			}
+		}
+	}
+					
+				
+			
+			
+					
+*/			
